@@ -1,25 +1,41 @@
+import time
 import findspark
 findspark.init()
 import pyspark
+from pyspark.sql.session import SparkSession
 from pyspark.sql import SQLContext
 from pyspark.sql import HiveContext
+import ConfigParser # pip
+
+# time stamp
+timestr = time.strftime("%Y%m%d-%H%M%S")
+
+
+# Parsing Configs
+config = ConfigParser.ConfigParser()
+config.read('hive.conf')
+conf_dict = dict(config.items('config'))
+
 
 # Initializing
-sc = pyspark.SparkContext(appName = "app_name")
-sqlContext = SQLContext(sc)
-hc = HiveContext(sc)
+#sc = pyspark.SparkContext(appName = "app_name")
+#sqlContext = SQLContext(sc)
+#hc = HiveContext(sc)
 
-spark = SparkSession
-        .builder()
-        .appName("interfacing spark sql to hive metastore without configuration file")
-        .config("hive.metastore.uris", "thrift://localhost:9083") // replace with your hivemetastore service's thrift url
-        .enableHiveSupport() // don't forget to enable hive support
-        .getOrCreate()
 
-fdmrt_cstmr = hc.table("foodmart.customer")
-fdmrt_cstmr.show()
-fdmrt_cstmr.registerTempTable("fdmrt_temp")
-hc.sql("select * from fdmrt_temp limit 5").show()
-fdmrt.write.format("orc").save("/imported/hive/data_from_hive_orc")
-fdmrt.write.format("csv").save("/imported/hive/data_from_hive_csv")
-print("the end")
+hive_meta_host = conf_dict['hive_meta_host']
+hive_meta_port = conf_dict['hive_meta_port']
+hive_meta_uri = "thrift://" + hive_meta_host +":"+ hive_meta_port
+#hive_meta_host = conf_dict['hive_meta_host']
+#hive_meta_host = conf_dict['hive_meta_host']
+
+
+spark = SparkSession.builder\
+    .appName("interfacing spark sql to hive metastore without configuration file")\
+    .config("hive.metastore.uris", hive_meta_uri)\
+    .enableHiveSupport()\
+    .getOrCreate()
+
+
+df = spark.table("foodmart.customer")
+df.write.format("orc").save("/import/" + conf_dict['hive_hdfs_destination'] +"_"+ timestr )

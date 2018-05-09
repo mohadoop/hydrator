@@ -1,4 +1,29 @@
 import happybase
+import time
+import findspark
+findspark.init()
+import pyspark
+from pyspark.sql.session import SparkSession
+from pyspark.sql import SQLContext
+from pyspark.sql import HiveContext
+import ConfigParser # pip
+
+# time stamp
+timestr = time.strftime("%Y%m%d-%H%M%S")
+
+
+# Parsing Configs
+config = ConfigParser.ConfigParser()
+config.read('hbase.conf')
+conf_dict = dict(config.items('config'))
+
+# Vars from configs
+hbase_host = conf_dict['hbase_meta_host']
+hbase_port = conf_dict['hbase_meta_port']
+hbase_uri = "thrift://" + hbase_meta_host +":"+ hbase_meta_port
+
+
+
 
 connection = happybase.Connection('hostname')
 table = connection.table('table-name')
